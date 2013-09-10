@@ -845,19 +845,15 @@ addResourcePath <- function(prefix, directoryPath) {
   if (!grepl('^[a-z][a-z0-9\\-_]*$', prefix, ignore.case=TRUE, perl=TRUE)) {
     stop("addResourcePath called with invalid prefix; please see documentation")
   }
-message("addRP1a")
 
   if (prefix %in% c('shared')) {
     stop("addResourcePath called with the reserved prefix '", prefix, "'; ",
          "please use a different prefix")
   }
-message("addRP1b")
 
   directoryPath <- normalizePath(directoryPath, mustWork=TRUE)
-message("addRP1c")
 
   existing <- .globals$resources[[prefix]]
-message("addRP1d")
 
   if (!is.null(existing)) {
     if (existing$directoryPath != directoryPath) {
@@ -865,14 +861,11 @@ message("addRP1d")
               existing$directoryPath)
     }
   }
-message("addRP1e")
 
   message('Shiny URLs starting with /', prefix, ' will mapped to ', directoryPath)
-message("addRP2")
 
   .globals$resources[[prefix]] <- list(directoryPath=directoryPath,
                                        func=staticHandler(directoryPath))
-message("addRP3")
 }
 
 resourcePathHandler <- function(req) {
@@ -1039,7 +1032,6 @@ startAppDir <- function(port=8101L, workerId) {
 }
 
 startAppObj <- function(ui, serverFunc, port, workerId) {
-message("startAppObj1")
   uiHandler <- function(req) {
     if (!identical(req$REQUEST_METHOD, 'GET'))
       return(NULL)
@@ -1061,13 +1053,10 @@ message("startAppObj1")
 }
 
 startApp <- function(httpHandlers, serverFuncSource, port, workerId) {
-message("startApp1")
   sys.www.root <- system.file('www', package='shiny')
-message("startApp2")  
 
   httpuvCallbacks <- list(
     onHeaders = function(req) {
-message("startApp3")  
       maxSize <- getOption('shiny.maxRequestSize', 5 * 1024 * 1024)
       if (maxSize <= 0)
         return(NULL)
@@ -1095,7 +1084,6 @@ message("startApp3")
                         resourcePathHandler,
                         reactLogHandler)),
     onWSOpen = function(ws) {
-message("startApp4")  
       shinysession <- ShinySession$new(ws, workerId)
       appsByToken$set(shinysession$token, shinysession)
       
@@ -1204,16 +1192,13 @@ message("startApp4")
       })
       
       ws$onClose(function() {
-message("startApp5")  
         shinysession$close()
         appsByToken$remove(shinysession$token)
       })
     }
   )
-message("startApp6")  
 
   if (is.numeric(port) || is.integer(port)) {
-message("startApp7")  
     message('\n', 'Listening on port ', port)
     return(startServer("0.0.0.0", port, httpuvCallbacks))
   } else if (is.character(port)) {    
