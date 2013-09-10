@@ -841,6 +841,8 @@ registerClient <- function(client) {
 #'   
 #' @export
 addResourcePath <- function(prefix, directoryPath) {
+message("addRP1")
+  
   prefix <- prefix[1]
   if (!grepl('^[a-z][a-z0-9\\-_]*$', prefix, ignore.case=TRUE, perl=TRUE)) {
     stop("addResourcePath called with invalid prefix; please see documentation")
@@ -863,9 +865,11 @@ addResourcePath <- function(prefix, directoryPath) {
   }
   
   message('Shiny URLs starting with /', prefix, ' will mapped to ', directoryPath)
-  
+message("addRP2")
+
   .globals$resources[[prefix]] <- list(directoryPath=directoryPath,
                                        func=staticHandler(directoryPath))
+message("addRP3")
 }
 
 resourcePathHandler <- function(req) {
@@ -1032,6 +1036,7 @@ startAppDir <- function(port=8101L, workerId) {
 }
 
 startAppObj <- function(ui, serverFunc, port, workerId) {
+message("startAppObj1")
   uiHandler <- function(req) {
     if (!identical(req$REQUEST_METHOD, 'GET'))
       return(NULL)
@@ -1053,7 +1058,7 @@ startAppObj <- function(ui, serverFunc, port, workerId) {
 }
 
 startApp <- function(httpHandlers, serverFuncSource, port, workerId) {
-message("startApp1")  
+message("startApp1")
   sys.www.root <- system.file('www', package='shiny')
 message("startApp2")  
 
