@@ -841,8 +841,6 @@ registerClient <- function(client) {
 #'   
 #' @export
 addResourcePath <- function(prefix, directoryPath) {
-message("addRP1")
-  
   prefix <- prefix[1]
   if (!grepl('^[a-z][a-z0-9\\-_]*$', prefix, ignore.case=TRUE, perl=TRUE)) {
     stop("addResourcePath called with invalid prefix; please see documentation")
