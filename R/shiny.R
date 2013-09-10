@@ -1053,11 +1053,13 @@ startAppObj <- function(ui, serverFunc, port, workerId) {
 }
 
 startApp <- function(httpHandlers, serverFuncSource, port, workerId) {
-  
+message("startApp1")  
   sys.www.root <- system.file('www', package='shiny')
-  
+message("startApp2")  
+
   httpuvCallbacks <- list(
     onHeaders = function(req) {
+message("startApp3")  
       maxSize <- getOption('shiny.maxRequestSize', 5 * 1024 * 1024)
       if (maxSize <= 0)
         return(NULL)
@@ -1085,6 +1087,7 @@ startApp <- function(httpHandlers, serverFuncSource, port, workerId) {
                         resourcePathHandler,
                         reactLogHandler)),
     onWSOpen = function(ws) {
+message("startApp4")  
       shinysession <- ShinySession$new(ws, workerId)
       appsByToken$set(shinysession$token, shinysession)
       
@@ -1193,13 +1196,16 @@ startApp <- function(httpHandlers, serverFuncSource, port, workerId) {
       })
       
       ws$onClose(function() {
+message("startApp5")  
         shinysession$close()
         appsByToken$remove(shinysession$token)
       })
     }
   )
-  
+message("startApp6")  
+
   if (is.numeric(port) || is.integer(port)) {
+message("startApp7")  
     message('\n', 'Listening on port ', port)
     return(startServer("0.0.0.0", port, httpuvCallbacks))
   } else if (is.character(port)) {    
