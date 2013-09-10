@@ -847,23 +847,28 @@ message("addRP1")
   if (!grepl('^[a-z][a-z0-9\\-_]*$', prefix, ignore.case=TRUE, perl=TRUE)) {
     stop("addResourcePath called with invalid prefix; please see documentation")
   }
-  
+message("addRP1a")
+
   if (prefix %in% c('shared')) {
     stop("addResourcePath called with the reserved prefix '", prefix, "'; ",
          "please use a different prefix")
   }
-  
+message("addRP1b")
+
   directoryPath <- normalizePath(directoryPath, mustWork=TRUE)
-  
+message("addRP1c")
+
   existing <- .globals$resources[[prefix]]
-  
+message("addRP1d")
+
   if (!is.null(existing)) {
     if (existing$directoryPath != directoryPath) {
       warning("Overriding existing prefix ", prefix, " => ",
               existing$directoryPath)
     }
   }
-  
+message("addRP1e")
+
   message('Shiny URLs starting with /', prefix, ' will mapped to ', directoryPath)
 message("addRP2")
 
