@@ -147,7 +147,7 @@ ShinySession <- setRefClass(
         obs <- observe({
           
           value <- try(func(), silent=FALSE)
-          
+
           .invalidatedOutputErrors$remove(name)
           .invalidatedOutputValues$remove(name)
           
@@ -229,7 +229,8 @@ ShinySession <- setRefClass(
       }
       
       value <- try(do.call(func, as.list(append(msg$args, msg$blobs))),
-                   silent=TRUE)
+                  silent=TRUE)
+
       if (inherits(value, 'try-error')) {
         .sendErrorResponse(msg, conditionMessage(attr(value, 'condition')))
       }
@@ -1317,15 +1318,35 @@ runApp <- function(appDir=getwd(),
   
   .globals$retval <- NULL
   .globals$stopped <- FALSE
+  # ael add error handling
   tryCatch(
     while (!.globals$stopped) {
       serviceApp()
+      # an error along the way won't get through httpuv, but the error message will be set
+      if (geterrmessage() != "") stop(geterrmessage(), call. = FALSE)
       Sys.sleep(0.001)
     },
+#     error = function(e) { stop(e, call. = FALSE) },
+#     warning = function(w) {
+#       wres <- findRestart("muffleWarning")
+#       message("found a warning")
+#       warning(w)
+#       invokeRestart(wres)
+#       },
     finally = {
       timerCallbacks$clear()
     }
   )
+  # previous version
+#   tryCatch(
+#     while (!.globals$stopped) {
+#       serviceApp()
+#       Sys.sleep(0.001)
+#     },
+#     finally = {
+#       timerCallbacks$clear()
+#     }
+#   )
   
   return(.globals$retval)
 }

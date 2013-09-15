@@ -326,7 +326,7 @@ Observable <- setRefClass(
       
       if (identical(class(.value), 'try-error'))
         stop(attr(.value, 'condition'))
-
+      
       if (.visible)
         .value
       else
@@ -405,6 +405,7 @@ Observable <- setRefClass(
 #' @export
 reactive <- function(x, env = parent.frame(), quoted = FALSE, label = NULL) {
   fun <- exprToFunction(x, env, quoted)
+
   if (is.null(label))
     label <- sprintf('reactive(%s)', paste(deparse(body(fun)), collapse='\n'))
 

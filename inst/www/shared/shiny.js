@@ -1,3 +1,4 @@
+// updated by ael, Aug/Sept 2013
 /*jshint browser:true, jquery:true, strict:false, curly:false, indent:2*/
 
 (function() {
@@ -2289,7 +2290,7 @@
   // =========================================================================
   // initShiny
   // =========================================================================
-  function initShiny() {
+  exports.initShiny = function() {
 
     var shinyapp = exports.shinyapp = new ShinyApp();
 
@@ -2549,7 +2550,7 @@
         bindInputs(scope)
       );
     }
-    function unbindAll(scope) {
+    exports.unbindAll = function(scope) {
       unbindInputs(scope);
       unbindOutputs(scope);
     }
@@ -2562,7 +2563,6 @@
         inputs.setInput(name, value);
       });
     };
-    exports.unbindAll = unbindAll;
 
     // Calls .initialize() for all of the input objects in all input bindings,
     // in the given scope.
@@ -2691,11 +2691,11 @@
     inputsNoResend.reset(initialValues);
     shinyapp.connect(initialValues);
   } // function initShiny()
-
+  
   $(function() {
     // Init Shiny a little later than document ready, so user code can
     // run first (i.e. to register bindings)
-    setTimeout(initShiny, 1);
+    if (!window.deferredShinyInit) setTimeout(exports.initShiny, 1);
   });
 
   $(document).on('click', '.slider-animate-button', function(evt) {

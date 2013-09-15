@@ -57,12 +57,17 @@ Context <- setRefClass(
     },
     executeFlushCallbacks = function() {
       "For internal use only."
+      # ael: the default behaviour of Shiny is to cover up for errors and
+      # warnings.  This seems to be the place to forward them if we want.
       lapply(.flushCallbacks, function(func) {
         withCallingHandlers({
           func()
-        }, warning = function(e) {
-          # TODO: Callbacks in app
+# ael - just let all warnings through.
+#         }, warning = function(w) {
+#           # TODO: Callbacks in app
         }, error = function(e) {
+          if (isTRUE(getOption('shiny.withlively')))
+            stop(e, call. = FALSE)
           # TODO: Callbacks in app
         })
       })
