@@ -1322,22 +1322,19 @@ runApp <- function(appDir=getwd(),
   tryCatch(
     while (!.globals$stopped) {
       serviceApp()
-      # an error along the way won't get through httpuv, but the error message will be set
-      if (geterrmessage() != "") stop(geterrmessage(), call. = FALSE)
+      # An error along the way won't get through httpuv, but the error 
+      # message will be set.  If we're running from Lively, we want to see
+      # that error.
+      if (isTRUE(getOption('shiny.withlively')) && geterrmessage() != "")
+        stop(geterrmessage(), call. = FALSE)
       Sys.sleep(0.001)
     },
-#     error = function(e) { stop(e, call. = FALSE) },
-#     warning = function(w) {
-#       wres <- findRestart("muffleWarning")
-#       message("found a warning")
-#       warning(w)
-#       invokeRestart(wres)
-#       },
     finally = {
       timerCallbacks$clear()
     }
   )
-  # previous version
+
+# previous version
 #   tryCatch(
 #     while (!.globals$stopped) {
 #       serviceApp()
