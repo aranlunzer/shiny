@@ -863,7 +863,7 @@ addResourcePath <- function(prefix, directoryPath) {
     }
   }
 
-  message('Shiny URLs starting with /', prefix, ' will mapped to ', directoryPath)
+  if (!isTRUE(getOption('shiny.withlively'))) message('Shiny URLs starting with /', prefix, ' will mapped to ', directoryPath)
 
   .globals$resources[[prefix]] <- list(directoryPath=directoryPath,
                                        func=staticHandler(directoryPath))
@@ -1319,6 +1319,7 @@ runApp <- function(appDir=getwd(),
   .globals$retval <- NULL
   .globals$stopped <- FALSE
   # ael add error handling
+  tryCatch(stop(""),error=function(e){})  # clear any previous error
   tryCatch(
     while (!.globals$stopped) {
       serviceApp()
@@ -1326,7 +1327,7 @@ runApp <- function(appDir=getwd(),
       # message will be set.  If we're running from Lively, we want to see
       # that error.
       if (isTRUE(getOption('shiny.withlively')) && geterrmessage() != "")
-        stop(geterrmessage(), call. = FALSE)
+        stop(geterrmessage())
       Sys.sleep(0.001)
     },
     finally = {
