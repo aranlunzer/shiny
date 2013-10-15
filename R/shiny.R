@@ -1319,7 +1319,7 @@ runApp <- function(appDir=getwd(),
   .globals$retval <- NULL
   .globals$stopped <- FALSE
   # ael add error handling
-  tryCatch(stop(""),error=function(e){})  # clear any previous error
+  tryCatch(stop(""),error=function(e){})  # ensure nothing held for geterrmessage
   tryCatch(
     while (!.globals$stopped) {
       serviceApp()
@@ -1335,7 +1335,7 @@ runApp <- function(appDir=getwd(),
     }
   )
 
-# previous version
+# original version
 #   tryCatch(
 #     while (!.globals$stopped) {
 #       serviceApp()
@@ -1361,7 +1361,7 @@ runApp <- function(appDir=getwd(),
 stopApp <- function(returnValue = NULL) {
   .globals$retval <- returnValue
   .globals$stopped <- TRUE
-  httpuv::interrupt()
+  httpuv:::interrupt()    # ael - force access to the method
 }
 
 #' Run Shiny Example Applications

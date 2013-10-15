@@ -67,7 +67,7 @@ Context <- setRefClass(
 #           # TODO: Callbacks in app
         }, error = function(e) {
           if (isTRUE(getOption('shiny.withlively')))
-            stop(e, call. = FALSE)
+            stop(e)    # for Lively, re-throw (else ignore)
           # TODO: Callbacks in app
         })
       })

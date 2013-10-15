@@ -300,7 +300,8 @@ Observable <- setRefClass(
     .value = 'ANY',
     .visible = 'logical',
     .execCount = 'integer',
-    .mostRecentCtxId = 'character'
+    .mostRecentCtxId = 'character',
+    .discarded = "logical"   # ael
   ),
   methods = list(
     initialize = function(func, label=deparse(substitute(func))) {
@@ -314,8 +315,17 @@ Observable <- setRefClass(
       .label <<- label
       .execCount <<- 0L
       .mostRecentCtxId <<- ""
+      .discarded <<- FALSE
     },
+    # ael added discard - send using attr(myReactive, "observable")$discard()
+    discard = function() { .discarded <<- TRUE; .func <<- function() NULL },
     getValue = function() {
+      # ael added
+      if (.discarded) {
+        logToFile(paste0("attempt to getValue from discarded reactive: ", .label))
+        return(NULL)    # do not pass GO.  do not collect $200.
+      }
+      
       .dependents$register()
 
       if (.invalidated || .running) {
@@ -324,8 +334,16 @@ Observable <- setRefClass(
 
       .graphDependsOnId(getCurrentContext()$id, .mostRecentCtxId)
       
-      if (identical(class(.value), 'try-error'))
-        stop(attr(.value, 'condition'))
+      if (identical(class(.value), 'try-error')) {
+        # ael: for Shiny we turn errors into messages
+        logToFile(paste0("caught error after .updateValue in ", .label))
+        e <- attr(.value, 'condition')
+        if (isTRUE(getOption('shiny.withlively'))) {
+          message(e$message)
+          return(NULL)
+        } else { stop(e) }
+      }  
+        # original:   stop(attr(.value, 'condition'))
       
       if (.visible)
         .value
@@ -336,8 +354,10 @@ Observable <- setRefClass(
       ctx <- Context$new(.label, type='observable', prevId=.mostRecentCtxId)
       .mostRecentCtxId <<- ctx$id
       ctx$onInvalidate(function() {
-        .invalidated <<- TRUE
-        .dependents$invalidate()
+        if (!.discarded) {    # ael added
+          .invalidated <<- TRUE
+          .dependents$invalidate()
+        }
       })
       .execCount <<- .execCount + 1L
 
@@ -493,7 +513,14 @@ Observer <- setRefClass(
     run = function() {
       ctx <- .createContext()
       .execCount <<- .execCount + 1L
-      ctx$run(.func)
+# ael debug hack
+withCallingHandlers( {ctx$run(.func) }, error = function(e)
+  { errfile = 'observer_error'
+    write(as.character(body(.func)), file=errfile);
+    write(unlist(traceback(2)), file=errfile, append = TRUE);
+    stop(e) })
+
+      # original version   ctx$run(.func)
     },
     onInvalidate = function(callback) {
       "Register a callback function to run when this observer is invalidated.
