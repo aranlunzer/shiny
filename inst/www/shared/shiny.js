@@ -462,7 +462,7 @@
       var self = this;
 
       var createSocketFunc = exports.createSocket || function() {
-        var ws = new WebSocket('ws://' + window.location.host, 'shiny');
+        var ws = new WebSocket('ws://' + window.location.host); // (ael removed) , 'shiny');
         ws.binaryType = 'arraybuffer';
         return ws;
       };

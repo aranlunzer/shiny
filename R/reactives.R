@@ -26,6 +26,10 @@ Dependents <- setRefClass(
           NULL
         }
       )
+    },
+    # ael added
+    clear = function() {
+      .dependents$clear()
     }
   )
 )
@@ -318,7 +322,12 @@ Observable <- setRefClass(
       .discarded <<- FALSE
     },
     # ael added discard - send using attr(myReactive, "observable")$discard()
-    discard = function() { .discarded <<- TRUE; .func <<- function() NULL },
+    discard = function() {
+      .discarded <<- TRUE
+      .value <<- NULL
+      .dependents$clear()
+      .func <<- function() NULL
+      },
     getValue = function() {
       # ael added
       if (.discarded) {
@@ -553,6 +562,13 @@ withCallingHandlers( {ctx$run(.func) }, error = function(e)
         .onResume <<- function() NULL
       }
       invisible()
+    },
+    # ael added
+    discard = function() {
+      "Not just suspend, but also null out the function (in the hope of reclaiming memory)."
+      .suspended <<- TRUE
+      .func <<- function() NULL
+      .invalidateCallbacks <<- list()
     }
   )
 )
