@@ -332,7 +332,8 @@ Observable <- setRefClass(
       .discarded <<- TRUE
       .value <<- NULL
       .dependents$clear()
-      .func <<- function() NULL
+      .func <<- emptyFunction()
+      logToFile(paste0("discarding reactive: ",.label))
       },
     getValue = function() {
       # ael added
@@ -351,9 +352,9 @@ Observable <- setRefClass(
       
       if (identical(class(.value), 'try-error')) {
         # ael: for Shiny we turn errors into messages
-        logToFile(paste0("caught error after .updateValue in ", .label))
         e <- attr(.value, 'condition')
         if (isTRUE(getOption('shiny.withlively'))) {
+          logToFile(paste0("caught error after .updateValue in ", .label))
           message(e$message)
           return(NULL)
         } else { stop(e) }
@@ -446,7 +447,12 @@ reactive <- function(x, env = parent.frame(), quoted = FALSE, label = NULL) {
 
   o <- Observable$new(fun, label)
   registerDebugHook(".func", o, "Reactive")
-  structure(o$getValue@.Data, observable = o, class = "reactive")
+  r <- structure(o$getValue@.Data, observable = o, class = "reactive")
+  # ael: add tracking of reactives
+  if (exists("reactives_created")) {
+    reactives_created[[length(reactives_created)+1]] <<- r
+  }
+  r
 }
 
 #' @S3method print reactive
@@ -494,7 +500,7 @@ Observer <- setRefClass(
       .priority <<- normalizePriority(priority)
       .execCount <<- 0L
       .suspended <<- suspended
-      .onResume <<- function() NULL
+      .onResume <<- emptyFunction()
       .prevId <<- ''
 
       # Defer the first running of this until flushReact is called
@@ -536,7 +542,7 @@ withCallingHandlers( {ctx$run(.func) }, error = function(e)
     write(unlist(traceback(2)), file=errfile, append = TRUE);
     stop(e) })
 
-      # original version   ctx$run(.func)
+      # original:   ctx$run(.func)
     },
     onInvalidate = function(callback) {
       "Register a callback function to run when this observer is invalidated.
@@ -566,7 +572,7 @@ withCallingHandlers( {ctx$run(.func) }, error = function(e)
       if (.suspended) {
         .suspended <<- FALSE
         .onResume()
-        .onResume <<- function() NULL
+        .onResume <<- emptyFunction()
       }
       invisible()
     },
@@ -574,7 +580,7 @@ withCallingHandlers( {ctx$run(.func) }, error = function(e)
     discard = function() {
       "Not just suspend, but also null out the function (in the hope of reclaiming memory)."
       .suspended <<- TRUE
-      .func <<- function() NULL
+      .func <<- emptyFunction()
       .invalidateCallbacks <<- list()
     }
   )

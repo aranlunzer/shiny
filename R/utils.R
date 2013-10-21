@@ -370,3 +370,10 @@ Callbacks <- setRefClass(
     }
   )
 )
+
+# ael added
+emptyFunction <- function() {
+  f <- function() NULL
+  environment(f) <- emptyenv()
+  f
+}
