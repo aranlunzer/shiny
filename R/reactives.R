@@ -333,12 +333,12 @@ Observable <- setRefClass(
       .value <<- NULL
       .dependents$clear()
       .func <<- emptyFunction()
-      logToFile(paste0("discarding reactive: ",.label))
+      debugLog(paste0("discarding reactive: ",.label))
       },
     getValue = function() {
       # ael added
       if (.discarded) {
-        logToFile(paste0("attempt to getValue from discarded reactive: ", .label))
+        debugLog(paste0("attempt to getValue from discarded reactive: ", .label))
         return(NULL)    # do not pass GO.  do not collect $200.
       }
       
@@ -354,7 +354,7 @@ Observable <- setRefClass(
         # ael: for Shiny we turn errors into messages
         e <- attr(.value, 'condition')
         if (isTRUE(getOption('shiny.withlively'))) {
-          logToFile(paste0("caught error after .updateValue in ", .label))
+          debugLog(paste0("caught error after .updateValue in ", .label))
           message(e$message)
           return(NULL)
         } else { stop(e) }
