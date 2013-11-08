@@ -333,7 +333,7 @@ Observable <- setRefClass(
       .value <<- NULL
       .dependents$clear()
       .func <<- emptyFunction()
-      debugLog(paste0("discarding reactive: ",.label))
+      # debugLog(paste0("discarding reactive: ",.label))
       },
     getValue = function() {
       # ael added
