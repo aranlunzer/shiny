@@ -13,7 +13,7 @@
 #' @aliases shiny
 #' @docType package
 #' @import httpuv caTools RJSONIO xtable digest methods
-NULL
+# NULL ????
 
 suppressPackageStartupMessages({
   library(httpuv)
@@ -248,7 +248,8 @@ ShinySession <- setRefClass(
       }
       
       value <- try(do.call(func, as.list(append(msg$args, msg$blobs))),
-                   silent=TRUE)
+                  silent=TRUE)
+
       if (inherits(value, 'try-error')) {
         .sendErrorResponse(msg, conditionMessage(attr(value, 'condition')))
       }
@@ -944,25 +945,25 @@ addResourcePath <- function(prefix, directoryPath) {
   if (!grepl('^[a-z][a-z0-9\\-_]*$', prefix, ignore.case=TRUE, perl=TRUE)) {
     stop("addResourcePath called with invalid prefix; please see documentation")
   }
-  
+
   if (prefix %in% c('shared')) {
     stop("addResourcePath called with the reserved prefix '", prefix, "'; ",
          "please use a different prefix")
   }
-  
+
   directoryPath <- normalizePath(directoryPath, mustWork=TRUE)
-  
+
   existing <- .globals$resources[[prefix]]
-  
+
   if (!is.null(existing)) {
     if (existing$directoryPath != directoryPath) {
       warning("Overriding existing prefix ", prefix, " => ",
               existing$directoryPath)
     }
   }
-  
-  message('Shiny URLs starting with /', prefix, ' will mapped to ', directoryPath)
-  
+
+  if (!isTRUE(getOption('shiny.withlively'))) message('Shiny URLs starting with /', prefix, ' will mapped to ', directoryPath)
+
   .globals$resources[[prefix]] <- list(directoryPath=directoryPath,
                                        func=staticHandler(directoryPath))
 }
@@ -1147,7 +1148,6 @@ startAppObj <- function(ui, serverFunc, port, host, workerId, quiet) {
 }
 
 startApp <- function(httpHandlers, serverFuncSource, port, host, workerId, quiet) {
-  
   sys.www.root <- system.file('www', package='shiny')
   
   # This value, if non-NULL, must be present on all HTTP and WebSocket
@@ -1304,7 +1304,7 @@ startApp <- function(httpHandlers, serverFuncSource, port, host, workerId, quiet
       })
     }
   )
-  
+
   if (is.numeric(port) || is.integer(port)) {
     if (!quiet) {
       message('\n', 'Listening on http://', host, ':', port)
@@ -1473,9 +1473,16 @@ runApp <- function(appDir=getwd(),
   
   .globals$retval <- NULL
   .globals$stopped <- FALSE
-  shinyCallingHandlers(
+
+  tryCatch(stop(""),error=function(e){})  # ensure nothing held for geterrmessage
+  tryCatch(shinyCallingHandlers(
     while (!.globals$stopped) {
       serviceApp()
+      # An error along the way won't get through httpuv, but the error 
+      # message will be set.  If we're running from Lively, we want to see
+      # that error.
+      if (isTRUE(getOption('shiny.withlively')) && geterrmessage() != "")
+        stop(geterrmessage())
       Sys.sleep(0.001)
     }
   )
@@ -1495,7 +1502,7 @@ runApp <- function(appDir=getwd(),
 stopApp <- function(returnValue = NULL) {
   .globals$retval <- returnValue
   .globals$stopped <- TRUE
-  httpuv::interrupt()
+  httpuv:::interrupt()    # ael - force access to the method
 }
 
 #' Run Shiny Example Applications

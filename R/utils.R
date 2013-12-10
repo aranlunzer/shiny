@@ -422,3 +422,10 @@ get_exists = function(x, mode) {
   if (exists(x, envir = parent.frame(), mode = mode, inherits = FALSE))
     get(x, envir = parent.frame(), mode = mode, inherits = FALSE)
 }
+
+# ael added
+emptyFunction <- function() {
+  f <- function() NULL
+  environment(f) <- emptyenv()
+  f
+}

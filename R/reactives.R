@@ -26,6 +26,10 @@ Dependents <- setRefClass(
           NULL
         }
       )
+    },
+    # ael added
+    clear = function() {
+      .dependents$clear()
     }
   )
 )
@@ -306,7 +310,8 @@ Observable <- setRefClass(
     .value = 'ANY',
     .visible = 'logical',
     .execCount = 'integer',
-    .mostRecentCtxId = 'character'
+    .mostRecentCtxId = 'character',
+    .discarded = "logical"   # ael
   ),
   methods = list(
     initialize = function(func, label=deparse(substitute(func))) {
@@ -320,8 +325,23 @@ Observable <- setRefClass(
       .label <<- label
       .execCount <<- 0L
       .mostRecentCtxId <<- ""
+      .discarded <<- FALSE
     },
+    # ael added discard - send using attr(myReactive, "observable")$discard()
+    discard = function() {
+      .discarded <<- TRUE
+      .value <<- NULL
+      .dependents$clear()
+      .func <<- emptyFunction()
+      # debugLog(paste0("discarding reactive: ",.label))
+      },
     getValue = function() {
+      # ael added
+      if (.discarded) {
+        debugLog(paste0("attempt to getValue from discarded reactive: ", .label))
+        return(NULL)    # do not pass GO.  do not collect $200.
+      }
+      
       .dependents$register()
 
       if (.invalidated || .running) {
@@ -330,9 +350,17 @@ Observable <- setRefClass(
 
       .graphDependsOnId(getCurrentContext()$id, .mostRecentCtxId)
       
-      if (identical(class(.value), 'try-error'))
-        stop(attr(.value, 'condition'))
-
+      if (identical(class(.value), 'try-error')) {
+        # ael: for Shiny we turn errors into messages
+        e <- attr(.value, 'condition')
+        if (isTRUE(getOption('shiny.withlively'))) {
+          debugLog(paste0("caught error after .updateValue in ", .label))
+          message(e$message)
+          return(NULL)
+        } else { stop(e) }
+      }  
+        # original:   stop(attr(.value, 'condition'))
+      
       if (.visible)
         .value
       else
@@ -342,8 +370,10 @@ Observable <- setRefClass(
       ctx <- Context$new(.label, type='observable', prevId=.mostRecentCtxId)
       .mostRecentCtxId <<- ctx$id
       ctx$onInvalidate(function() {
-        .invalidated <<- TRUE
-        .dependents$invalidate()
+        if (!.discarded) {    # ael added
+          .invalidated <<- TRUE
+          .dependents$invalidate()
+        }
       })
       .execCount <<- .execCount + 1L
 
@@ -411,12 +441,18 @@ Observable <- setRefClass(
 #' @export
 reactive <- function(x, env = parent.frame(), quoted = FALSE, label = NULL) {
   fun <- exprToFunction(x, env, quoted)
+
   if (is.null(label))
     label <- sprintf('reactive(%s)', paste(deparse(body(fun)), collapse='\n'))
 
   o <- Observable$new(fun, label)
   registerDebugHook(".func", o, "Reactive")
-  structure(o$getValue@.Data, observable = o, class = "reactive")
+  r <- structure(o$getValue@.Data, observable = o, class = "reactive")
+  # ael: add tracking of reactives
+  if (exists("reactives_created")) {
+    reactives_created[[length(reactives_created)+1]] <<- r
+  }
+  r
 }
 
 #' @S3method print reactive
@@ -464,7 +500,7 @@ Observer <- setRefClass(
       .priority <<- normalizePriority(priority)
       .execCount <<- 0L
       .suspended <<- suspended
-      .onResume <<- function() NULL
+      .onResume <<- emptyFunction()
       .prevId <<- ''
 
       # Defer the first running of this until flushReact is called
@@ -499,7 +535,14 @@ Observer <- setRefClass(
     run = function() {
       ctx <- .createContext()
       .execCount <<- .execCount + 1L
-      ctx$run(.func)
+# ael debug hack
+withCallingHandlers( {ctx$run(.func) }, error = function(e)
+  { errfile = 'observer_error'
+    write(as.character(body(.func)), file=errfile);
+    write(unlist(traceback(2)), file=errfile, append = TRUE);
+    stop(e) })
+
+      # original:   ctx$run(.func)
     },
     onInvalidate = function(callback) {
       "Register a callback function to run when this observer is invalidated.
@@ -529,9 +572,16 @@ Observer <- setRefClass(
       if (.suspended) {
         .suspended <<- FALSE
         .onResume()
-        .onResume <<- function() NULL
+        .onResume <<- emptyFunction()
       }
       invisible()
+    },
+    # ael added
+    discard = function() {
+      "Not just suspend, but also null out the function (in the hope of reclaiming memory)."
+      .suspended <<- TRUE
+      .func <<- emptyFunction()
+      .invalidateCallbacks <<- list()
     }
   )
 )
