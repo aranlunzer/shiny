@@ -1485,7 +1485,7 @@ runApp <- function(appDir=getwd(),
         stop(geterrmessage())
       Sys.sleep(0.001)
     }
-  )
+  ))
   
   return(.globals$retval)
 }
