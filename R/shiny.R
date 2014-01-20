@@ -13,7 +13,7 @@
 #' @aliases shiny
 #' @docType package
 #' @import httpuv caTools RJSONIO xtable digest methods
-# NULL ????
+NULL
 
 suppressPackageStartupMessages({
   library(httpuv)
@@ -304,11 +304,16 @@ ShinySession <- setRefClass(
       }
     },
     .write = function(json) {
-      if (getOption('shiny.trace', FALSE))
+      # ael: removed defaults from frequently used getOption calls, because
+      # it makes them slow.
+      
+      # if (getOption('shiny.trace', FALSE))
+      if (isTRUE(getOption('shiny.trace')))
         message('SEND ', 
            gsub('(?m)base64,[a-zA-Z0-9+/=]+','[base64 data]',json,perl=TRUE))
-      if (getOption('shiny.transcode.json', TRUE))
-        json <- iconv(json, to='UTF-8')
+      #if (getOption('shiny.transcode.json', TRUE))
+      if (!identical(getOption('shiny.transcode.json'), FALSE))
+          json <- iconv(json, to='UTF-8')
       .websocket$send(json)
     },
     
@@ -1198,7 +1203,8 @@ startApp <- function(httpHandlers, serverFuncSource, port, host, workerId, quiet
         if (is.character(msg))
           msg <- charToRaw(msg)
         
-        if (getOption('shiny.trace', FALSE)) {
+        #if (getOption('shiny.trace', FALSE)) {
+        if (isTRUE(getOption('shiny.trace'))) {
           if (binary)
             message("RECV ", '$$binary data$$')
           else
@@ -1402,7 +1408,7 @@ runApp <- function(appDir=getwd(),
     host <- '0.0.0.0'
 
   # Make warnings print immediately
-  ops <- options(warn = 1)
+  ops <- options(warn = 1)       # ensure issued immediately (only applies to non-caught warnings)
   on.exit(options(ops))
   
   if (nzchar(Sys.getenv('SHINY_PORT'))) {

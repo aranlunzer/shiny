@@ -55,39 +55,41 @@ renderReactLog <- function() {
 }
 
 .graphAppend <- function(logEntry) {
-  if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  # ael: removed default FALSE from this and all other getOption calls, because it makes them slow
+  # was... if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  if (isTRUE(getOption('shiny.reactlog')))
     .graphEnv$log <- c(.graphEnv$log, list(logEntry))
 }
 
 .graphDependsOn <- function(id, label) {
-  if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  if (isTRUE(getOption('shiny.reactlog')))
     .graphAppend(list(action='dep', id=id, dependsOn=label))
 }
 
 .graphDependsOnId <- function(id, dependee) {
-  if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  if (isTRUE(getOption('shiny.reactlog')))
     .graphAppend(list(action='depId', id=id, dependsOn=dependee))
 }
 
 .graphCreateContext <- function(id, label, type, prevId) {
-  if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  if (isTRUE(getOption('shiny.reactlog')))
     .graphAppend(list(
       action='ctx', id=id, label=paste(label, collapse='\n'), type=type, prevId=prevId
     ))
 }
 
 .graphEnterContext <- function(id) {
-  if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  if (isTRUE(getOption('shiny.reactlog')))
     .graphAppend(list(action='enter', id=id))
 }
 
 .graphExitContext <- function(id) {
-  if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  if (isTRUE(getOption('shiny.reactlog')))
     .graphAppend(list(action='exit', id=id))
 }
 
 .graphValueChange <- function(label, value) {
-  if (isTRUE(getOption('shiny.reactlog', FALSE))) {
+  if (isTRUE(getOption('shiny.reactlog'))) {
     .graphAppend(list(
       action = 'valueChange',
       id = label,
@@ -97,7 +99,7 @@ renderReactLog <- function() {
 }
 
 .graphInvalidate <- function(id) {
-  if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  if (isTRUE(getOption('shiny.reactlog')))
     .graphAppend(list(action='invalidate', id=id))
 }
 
