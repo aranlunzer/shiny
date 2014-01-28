@@ -468,6 +468,7 @@ srcFileOfRef <- function(srcref) {
     basename(fileEnv[["filename"]])
   else
     ""
+}
 
 # ael added
 emptyFunction <- function() {
