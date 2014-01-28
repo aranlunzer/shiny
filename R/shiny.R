@@ -249,7 +249,8 @@ ShinySession <- setRefClass(
       }
       
       value <- try(do.call(func, as.list(append(msg$args, msg$blobs))),
-                   silent=TRUE)
+                  silent=TRUE)
+
       if (inherits(value, 'try-error')) {
         .sendErrorResponse(msg, conditionMessage(attr(value, 'condition')))
       }
@@ -307,11 +308,16 @@ ShinySession <- setRefClass(
       if (closed){
         return()
       }
-      if (getOption('shiny.trace', FALSE))
+      # ael: removed defaults from frequently used getOption calls, because
+      # it makes them slow.
+      
+      # if (getOption('shiny.trace', FALSE))
+      if (isTRUE(getOption('shiny.trace')))
         message('SEND ', 
            gsub('(?m)base64,[a-zA-Z0-9+/=]+','[base64 data]',json,perl=TRUE))
-      if (getOption('shiny.transcode.json', TRUE))
-        json <- iconv(json, to='UTF-8')
+      #if (getOption('shiny.transcode.json', TRUE))
+      if (!identical(getOption('shiny.transcode.json'), FALSE))
+          json <- iconv(json, to='UTF-8')
       .websocket$send(json)
     },
     
@@ -1001,25 +1007,25 @@ addResourcePath <- function(prefix, directoryPath) {
   if (!grepl('^[a-z][a-z0-9\\-_]*$', prefix, ignore.case=TRUE, perl=TRUE)) {
     stop("addResourcePath called with invalid prefix; please see documentation")
   }
-  
+
   if (prefix %in% c('shared')) {
     stop("addResourcePath called with the reserved prefix '", prefix, "'; ",
          "please use a different prefix")
   }
-  
+
   directoryPath <- normalizePath(directoryPath, mustWork=TRUE)
-  
+
   existing <- .globals$resources[[prefix]]
-  
+
   if (!is.null(existing)) {
     if (existing$directoryPath != directoryPath) {
       warning("Overriding existing prefix ", prefix, " => ",
               existing$directoryPath)
     }
   }
-  
-  message('Shiny URLs starting with /', prefix, ' will mapped to ', directoryPath)
-  
+
+  if (!isTRUE(getOption('shiny.withlively'))) message('Shiny URLs starting with /', prefix, ' will mapped to ', directoryPath)
+
   .globals$resources[[prefix]] <- list(directoryPath=directoryPath,
                                        func=staticHandler(directoryPath))
 }
@@ -1204,7 +1210,6 @@ startAppObj <- function(ui, serverFunc, port, host, workerId, quiet) {
 }
 
 startApp <- function(httpHandlers, serverFuncSource, port, host, workerId, quiet) {
-  
   sys.www.root <- system.file('www', package='shiny')
   
   # This value, if non-NULL, must be present on all HTTP and WebSocket
@@ -1262,7 +1267,8 @@ startApp <- function(httpHandlers, serverFuncSource, port, host, workerId, quiet
         if (is.character(msg))
           msg <- charToRaw(msg)
         
-        if (getOption('shiny.trace', FALSE)) {
+        #if (getOption('shiny.trace', FALSE)) {
+        if (isTRUE(getOption('shiny.trace'))) {
           if (binary)
             message("RECV ", '$$binary data$$')
           else
@@ -1387,7 +1393,7 @@ startApp <- function(httpHandlers, serverFuncSource, port, host, workerId, quiet
       })
     }
   )
-  
+
   if (is.numeric(port) || is.integer(port)) {
     if (!quiet) {
       message('\n', 'Listening on http://', host, ':', port)
@@ -1492,7 +1498,7 @@ runApp <- function(appDir=getwd(),
     host <- '0.0.0.0'
 
   # Make warnings print immediately
-  ops <- options(warn = 1)
+  ops <- options(warn = 1)       # ensure issued immediately (only applies to non-caught warnings)
   on.exit(options(ops))
   
   if (nzchar(Sys.getenv('SHINY_PORT'))) {
@@ -1599,12 +1605,19 @@ runApp <- function(appDir=getwd(),
   
   .globals$retval <- NULL
   .globals$stopped <- FALSE
-  shinyCallingHandlers(
+
+  tryCatch(stop(""),error=function(e){})  # ensure nothing held for geterrmessage
+  tryCatch(shinyCallingHandlers(
     while (!.globals$stopped) {
       serviceApp()
+      # An error along the way won't get through httpuv, but the error 
+      # message will be set.  If we're running from Lively, we want to see
+      # that error.
+      if (isTRUE(getOption('shiny.withlively')) && geterrmessage() != "")
+        stop(geterrmessage())
       Sys.sleep(0.001)
     }
-  )
+  ))
   
   return(.globals$retval)
 }
@@ -1621,7 +1634,7 @@ runApp <- function(appDir=getwd(),
 stopApp <- function(returnValue = NULL) {
   .globals$retval <- returnValue
   .globals$stopped <- TRUE
-  httpuv::interrupt()
+  httpuv:::interrupt()    # ael - force access to the method
 }
 
 #' Run Shiny Example Applications

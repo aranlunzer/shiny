@@ -55,7 +55,9 @@ renderReactLog <- function() {
 }
 
 .graphAppend <- function(logEntry) {
-  if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  # ael: removed default FALSE from this and all other getOption calls, because it makes them slow
+  # was... if (isTRUE(getOption('shiny.reactlog', FALSE)))
+  if (isTRUE(getOption('shiny.reactlog')))
     .graphEnv$log <- c(.graphEnv$log, list(logEntry))
   session <- .getShowcaseSessionContext()
   if (!is.null(session)) {
