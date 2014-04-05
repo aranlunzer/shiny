@@ -371,6 +371,8 @@ Observable <- setRefClass(
       .mostRecentCtxId <<- ctx$id
       ctx$onInvalidate(function() {
         if (!.discarded) {    # ael added
+          # ael: for LivelyR, keep a running total of the number of invalidations performed
+          if (isTRUE(getOption('shiny.withlively'))) shinyInvalidations <<- shinyInvalidations + 1
           .invalidated <<- TRUE
           .dependents$invalidate()
         }
