@@ -515,6 +515,8 @@ Observer <- setRefClass(
       .prevId <<- ctx$id
 
       ctx$onInvalidate(function() {
+        # ael: for LivelyR, keep a running total of the number of invalidations performed
+        if (isTRUE(getOption('shiny.withlively'))) shinyInvalidations <<- shinyInvalidations + 1
         lapply(.invalidateCallbacks, function(func) {
           func()
           NULL

@@ -1425,7 +1425,8 @@ serviceApp <- function() {
 
   # If this R session is interactive, then call service() with a short timeout
   # to keep the session responsive to user input
-  maxTimeout <- ifelse(interactive(), 100, 1000)
+  #maxTimeout <- ifelse(interactive(), 100, 1000)
+  maxTimeout <- 50           # ael - let's not hang about
   
   timeout <- max(1, min(maxTimeout, timerCallbacks$timeToNextEvent()))
   service(timeout)
